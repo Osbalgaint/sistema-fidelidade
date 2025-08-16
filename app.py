@@ -38,11 +38,11 @@ def validar_id(card_id):
 
 def buscar_nome_cliente(card_id):
     conn = get_db_connection()
-    result = conn.execute("SELECT nome FROM clientes WHERE card_id = ?", (card_id,)).fetchone()
+    result = conn.execute("SELECT nome, celular FROM clientes WHERE card_id = ?", (card_id,)).fetchone()
     conn.close()
     if result:
-        return True, result['nome']
-    return False, "Cliente não encontrado."
+        return True, result['nome'], result['celular']
+    return False, "Cliente não encontrado", ""
 
 def listar_clientes():
     conn = get_db_connection()
@@ -61,14 +61,14 @@ def excluir_cliente(card_id):
     conn.close()
     return "Cliente não encontrado."
 
-def atualizar_nome_cliente(card_id, novo_nome):
+def atualizar_nome_cliente(card_id, novo_nome, novo_celular):
     conn = get_db_connection()
     result = conn.execute("SELECT nome FROM clientes WHERE card_id = ?", (card_id,)).fetchone()
     if result:
-        conn.execute("UPDATE clientes SET nome = ? WHERE card_id = ?", (novo_nome, card_id))
+        conn.execute("UPDATE clientes SET nome = ?, celular = ? WHERE card_id = ?", (novo_nome, novo_celular, card_id))
         conn.commit()
         conn.close()
-        return "Nome do cliente atualizado com sucesso!"
+        return "Cliente atualizado com sucesso!"
     conn.close()
     return "Cliente não encontrado."
 
@@ -218,28 +218,44 @@ def cadastro():
     mensagem = ""
     card_id = "CARD"
     nome_atual = ""
+    celular_atual = ""
     mostrar_formulario_edicao = False
     mostrar_formulario_exclusao = False
+    confirmar_exclusao = False
+    confirmar_edicao = False
     clientes = []
+    card_id_excluir = ""
+    card_id_editar = ""
     if request.method == 'POST':
         action = request.form.get('action')
-        if action == 'buscar_cliente':
-            card_id = request.form.get('card_id_editar')
-            valido, resultado = buscar_nome_cliente(card_id)
-            if valido:
-                nome_atual = resultado
+        if action == 'mostrar_edicao':
+            senha = request.form.get('senha')
+            if senha == "03842789":
                 mostrar_formulario_edicao = True
             else:
-                mensagem = resultado
-        elif action == 'editar':
-            card_id = request.form.get('card_id')
-            novo_nome = request.form.get('novo_nome')
-            if not novo_nome:
-                mensagem = "Erro: Preencha o novo nome!"
+                mensagem = "Senha incorreta!"
+        elif action == 'buscar_cliente':
+            card_id_editar = request.form.get('card_id_editar')
+            valido, nome_atual, celular_atual = buscar_nome_cliente(card_id_editar)
+            if valido:
+                mostrar_formulario_edicao = True
             else:
-                mensagem = atualizar_nome_cliente(card_id, novo_nome)
-                if "sucesso" in mensagem.lower():
-                    return redirect(url_for('index'))
+                mensagem = "Cliente não encontrado!"
+        elif action == 'editar':
+            card_id_editar = request.form.get('card_id')
+            novo_nome = request.form.get('novo_nome')
+            novo_celular = request.form.get('novo_celular')
+            if not novo_nome or not novo_celular:
+                mensagem = "Erro: Preencha nome e celular!"
+            else:
+                confirmar_edicao = True
+        elif action == 'confirmar_edicao':
+            card_id_editar = request.form.get('card_id')
+            novo_nome = request.form.get('novo_nome')
+            novo_celular = request.form.get('novo_celular')
+            mensagem = atualizar_nome_cliente(card_id_editar, novo_nome, novo_celular)
+            if "sucesso" in mensagem.lower():
+                return redirect(url_for('index'))
         elif action == 'mostrar_exclusao':
             senha = request.form.get('senha')
             if senha == "03842789":
@@ -247,19 +263,24 @@ def cadastro():
                 mostrar_formulario_exclusao = True
             else:
                 mensagem = "Senha incorreta!"
-        elif action == 'excluir':
-            card_id = request.form.get('card_id_excluir')
-            mensagem = excluir_cliente(card_id)
+        elif action == 'selecionar_exclusao':
+            card_id_excluir = request.form.get('card_id_excluir')
+            valido, nome_atual, _ = buscar_nome_cliente(card_id_excluir)
+            if valido:
+                confirmar_exclusao = True
+            else:
+                mensagem = "Cliente não encontrado!"
+        elif action == 'confirmar_exclusao':
+            card_id_excluir = request.form.get('card_id')
+            mensagem = excluir_cliente(card_id_excluir)
             if "sucesso" in mensagem.lower():
                 return redirect(url_for('index'))
         else:  # Cadastro de novo cliente
             nome = request.form.get('nome')
             card_id = request.form.get('card_id')
             celular = request.form.get('celular')
-            if not nome:
-                mensagem = "Erro: Preencha o nome!"
-            elif not celular:
-                mensagem = "Erro: Preencha o celular!"
+            if not nome or not celular:
+                mensagem = "Erro: Preencha nome e celular!"
             else:
                 valido, erro = validar_id(card_id)
                 if not valido:
@@ -268,7 +289,7 @@ def cadastro():
                     mensagem = cadastrar_cliente(nome, card_id, celular)
                     if "sucesso" in mensagem.lower():
                         return redirect(url_for('index'))
-    return render_template('cadastro.html', card_id=card_id, mensagem=mensagem, nome_atual=nome_atual, mostrar_formulario_edicao=mostrar_formulario_edicao, mostrar_formulario_exclusao=mostrar_formulario_exclusao, clientes=clientes)
+    return render_template('cadastro.html', mensagem=mensagem, card_id=card_id, nome_atual=nome_atual, celular_atual=celular_atual, mostrar_formulario_edicao=mostrar_formulario_edicao, mostrar_formulario_exclusao=mostrar_formulario_exclusao, confirmar_exclusao=confirmar_exclusao, confirmar_edicao=confirmar_edicao, clientes=clientes, card_id_excluir=card_id_excluir, card_id_editar=card_id_editar)
 
 @app.route('/cliente', methods=['GET', 'POST'])
 def cliente():
