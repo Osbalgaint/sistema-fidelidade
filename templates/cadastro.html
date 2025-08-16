@@ -31,13 +31,15 @@
 <body>
 <div class="container">
     <h1>Cadastro de Novo Cliente</h1>
-    <form method="POST" onsubmit="return validarFormulario(this);">
-        <label>ID do Cartão (deve começar com 'CARD'):</label><br>
-        <input type="text" name="card_id" id="card_id" value="{{ card_id }}" required><br>
-        <label>Nome do Cliente:</label><br>
-        <input type="text" name="nome" required><br>
-        <button type="submit">Cadastrar Cliente</button>
-    </form>
+    <form method="POST" action="{{ url_for('cadastro') }}">
+    <label for="card_id">ID do Cartão:</label>
+    <input type="text" id="card_id" name="card_id" required><br><br>
+    <label for="nome">Nome:</label>
+    <input type="text" id="nome" name="nome" required><br><br>
+    <label for="celular">Celular:</label>
+    <input type="text" id="celular" name="celular" required placeholder="Ex.: (11) 99999-9999"><br><br>
+    <button type="submit">Cadastrar</button>
+</form>
 
     <h2>Editar Cadastro</h2>
     <form method="POST">
