@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Fidelidade</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { margin: 10px 0; }
+        label, input, button { margin: 5px; }
+        p { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Sistema de Fidelidade</h1>
+    <form method="POST">
+        <label>ID do Cartão:</label><br>
+        <input type="text" name="card_id" required>
+        <button type="submit" name="action" value="buscar">Buscar</button>
+    </form>
+    <p>Nome do Cliente: {% if card_id_display %}{{ card_id_display }} - {{ nome }}{% else %}{{ nome }}{% endif %}</p>
+    <p>Créditos Disponíveis: {{ creditos }}</p>
+    <p>Dias para Vencimento: {{ dias }}</p>
+    <p>Data de Expiração: {{ expiracao }}</p>
+    <p>Mensagem: {{ mensagem }}</p>
+
+    <form action="{{ url_for('cadastro') }}">
+        <button type="submit">Novo Cadastro</button>
+    </form>
+
+    <form method="POST" onsubmit="return confirmarAcao(this, 'recarregar');">
+        <input type="hidden" name="card_id" value="{{ request.form['card_id'] or '' }}">
+        <input type="hidden" name="senha" id="senha_recarregar">
+        <input type="hidden" name="action" value="recarregar">
+        <button type="submit">Recarregar Créditos</button>
+    </form>
+
+    <form method="POST" onsubmit="return confirmarAdicionar(this);">
+        <input type="hidden" name="card_id" value="{{ request.form['card_id'] or '' }}">
+        <input type="hidden" name="senha" id="senha_adicionar">
+        <input type="hidden" name="quantidade" id="quantidade_adicionar">
+        <input type="hidden" name="action" value="adicionar_credito_manual">
+        <button type="submit">Adicionar Crédito Manual</button>
+    </form>
+
+    <form method="POST" onsubmit="return confirmarDeduzir(this);">
+        <input type="hidden" name="card_id" value="{{ request.form['card_id'] or '' }}">
+        <input type="hidden" name="quantidade" id="quantidade_deduzir">
+        <input type="hidden" name="action" value="deduzir">
+        <button type="submit">Deduzir Crédito</button>
+    </form>
+
+    <script>
+        function confirmarAcao(form, action) {
+            var msg = action === 'recarregar' ? 'Digite a senha para recarga:' : 'Digite a senha para adicionar crédito:';
+            var senha = prompt(msg);
+            if (senha === "03842789") {
+                document.getElementById("senha_" + action).value = senha;
+                return true;
+            } else {
+                alert("Senha incorreta!");
+                return false;
+            }
+        }
+
+        function confirmarAdicionar(form) {
+            var senha = prompt("Digite a senha para adicionar crédito:");
+            if (senha !== "03842789") {
+                alert("Senha incorreta!");
+                return false;
+            }
+            var quantidade = prompt("Quantos créditos devem ser adicionados?");
+            if (quantidade && !isNaN(quantidade) && parseInt(quantidade) > 0) {
+                document.getElementById("quantidade_adicionar").value = quantidade;
+                document.getElementById("senha_adicionar").value = senha;
+                return true;
+            } else {
+                alert("Por favor, insira um número válido maior que zero!");
+                return false;
+            }
+        }
+
+        function confirmarDeduzir(form) {
+            var quantidade = prompt("Quantos produtos de comida foram consumidos?");
+            if (quantidade && !isNaN(quantidade) && parseInt(quantidade) > 0) {
+                document.getElementById("quantidade_deduzir").value = quantidade;
+                return true;
+            } else {
+                alert("Por favor, insira um número válido maior que zero!");
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

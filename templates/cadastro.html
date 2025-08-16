@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro de Cliente</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { margin: 10px 0; }
+        label, input, button { margin: 5px; }
+        p { margin: 10px 0; }
+        ul { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Cadastro de Novo Cliente</h1>
+    <form method="POST" onsubmit="return validarFormulario(this);">
+        <label>ID do Cartão (deve começar com 'CARD'):</label><br>
+        <input type="text" name="card_id" id="card_id" value="{{ card_id }}" required><br>
+        <label>Nome do Cliente:</label><br>
+        <input type="text" name="nome" required><br>
+        <button type="submit">Cadastrar Cliente</button>
+    </form>
+
+    <h2>Editar Cadastro</h2>
+    <form method="POST">
+        <input type="hidden" name="action" value="buscar_cliente">
+        <label>ID do Cartão a Editar:</label><br>
+        <input type="text" name="card_id_editar" required><br>
+        <button type="submit">Buscar Cliente</button>
+    </form>
+
+    {% if mostrar_formulario_edicao %}
+    <form method="POST" onsubmit="return confirmarEdicao();">
+        <input type="hidden" name="action" value="editar">
+        <input type="hidden" name="card_id" value="{{ card_id }}">
+        <label>Nome Atual:</label><br>
+        <input type="text" value="{{ nome_atual }}" readonly><br>
+        <label>Novo Nome:</label><br>
+        <input type="text" name="novo_nome" required><br>
+        <button type="submit">Confirmar Edição</button>
+    </form>
+    {% endif %}
+
+    <h2>Excluir Cadastro</h2>
+    <form method="POST" onsubmit="return confirmarAcessoExclusao();">
+        <input type="hidden" name="action" value="mostrar_exclusao">
+        <input type="hidden" name="senha" id="senha_exclusao">
+        <button type="submit">Excluir Cadastros</button>
+    </form>
+
+    {% if mostrar_formulario_exclusao %}
+    <h3>Clientes Cadastrados:</h3>
+    <ul>
+        {% for card_id, nome in clientes %}
+        <li>{{ card_id }} - {{ nome }}</li>
+        {% endfor %}
+    </ul>
+    <form method="POST" onsubmit="return confirmarExclusao();">
+        <input type="hidden" name="action" value="excluir">
+        <label>ID do Cartão a Excluir:</label><br>
+        <input type="text" name="card_id_excluir" required><br>
+        <button type="submit">Excluir</button>
+    </form>
+    {% endif %}
+
+    <p>Mensagem: {{ mensagem }}</p>
+    <a href="{{ url_for('index') }}">Voltar para a Página Inicial</a>
+
+    <script>
+        function validarFormulario(form) {
+            var card_id = document.getElementById('card_id').value;
+            if (!card_id.startsWith('CARD')) {
+                alert("O ID do cartão deve começar com 'CARD'!");
+                return false;
+            }
+            return true;
+        }
+
+        function confirmarEdicao() {
+            return confirm("Tem certeza da alteração?");
+        }
+
+        function confirmarAcessoExclusao() {
+            var senha = prompt("Digite a senha para acessar a exclusão:");
+            if (senha === "03842789") {
+                document.getElementById("senha_exclusao").value = senha;
+                return true;
+            } else {
+                alert("Senha incorreta!");
+                return false;
+            }
+        }
+
+        function confirmarExclusao() {
+            return confirm("Tem certeza de que deseja excluir o cadastro?");
+        }
+    </script>
+</body>
+</html>
