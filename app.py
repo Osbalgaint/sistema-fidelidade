@@ -5,15 +5,13 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 
 app = Flask(__name__)
 
-# Conexão com banco de dados (salva permanentemente)
+# Conexão com banco de dados
 def get_db_connection():
     conn = sqlite3.connect('fidelidade.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Cria tabela de clientes se não existir
-conn = get_db_connection()
-conn = get_db_connection()
+# Cria tabela de clientes
 conn = get_db_connection()
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS clientes (
@@ -27,6 +25,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS clientes (
 )''')
 conn.commit()
 conn.close()
+
 def validar_id(card_id):
     if not card_id.startswith('CARD'):
         return False, "Erro: O ID do cartão deve começar com 'CARD'."
@@ -73,13 +72,13 @@ def atualizar_nome_cliente(card_id, novo_nome):
     conn.close()
     return "Cliente não encontrado."
 
-def cadastrar_cliente(nome, card_id):
+def cadastrar_cliente(nome, card_id, celular):
     hoje = datetime.now().date()
     expiracao = hoje + timedelta(days=30)
     conn = get_db_connection()
     try:
-        conn.execute("INSERT INTO clientes (nome, card_id, ultimo_pagamento, creditos, data_expiracao) VALUES (?, ?, ?, 10, ?)",
-                     (nome, card_id, str(hoje), str(expiracao)))
+        conn.execute("INSERT INTO clientes (nome, card_id, ultimo_pagamento, creditos, data_expiracao, celular) VALUES (?, ?, ?, ?, ?, ?)",
+                     (nome, card_id, str(hoje), 10, str(expiracao), celular))
         conn.commit()
         conn.close()
         return "Cliente cadastrado com sucesso! Créditos iniciais: 10"
@@ -172,7 +171,6 @@ def buscar_info_cliente(card_id):
         return nome, creditos, dias_restantes, expiracao_formatada
     return "Cliente não encontrado", None, None, None
 
-# Rota principal (tela inicial)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     mensagem = ""
@@ -215,32 +213,63 @@ def index():
             card_id_display = card_id
     return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao)
 
-# Rota para página de cadastro
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
-    mensagem = None
+    mensagem = ""
+    card_id = "CARD"
+    nome_atual = ""
+    mostrar_formulario_edicao = False
+    mostrar_formulario_exclusao = False
+    clientes = []
     if request.method == 'POST':
-        card_id = request.form['card_id'].strip().upper()
-        nome = request.form['nome'].strip()
-        celular = request.form['celular'].strip()
-        if not validar_id(card_id):
-            mensagem = "ID do cartão inválido. Use apenas letras e números."
-        elif not nome:
-            mensagem = "Nome não pode estar vazio."
-        elif not celular:
-            mensagem = "Celular não pode estar vazio."
-        else:
-            conn = get_db_connection()
-            c = conn.cursor()
-            try:
-                c.execute("INSERT INTO clientes (nome, card_id, creditos, celular) VALUES (?, ?, ?, ?)",
-                          (nome, card_id, 0, celular))
-                conn.commit()
-                mensagem = "Cliente cadastrado com sucesso!"
-            except sqlite3.IntegrityError:
-                mensagem = "ID do cartão já está em uso."
-            conn.close()
-    return render_template('cadastro.html', mensagem=mensagem)card_id=card_id, mensagem=mensagem, nome_atual=nome_atual, mostrar_formulario_edicao=mostrar_formulario_edicao, mostrar_formulario_exclusao=mostrar_formulario_exclusao, clientes=clientes)
+        action = request.form.get('action')
+        if action == 'buscar_cliente':
+            card_id = request.form.get('card_id_editar')
+            valido, resultado = buscar_nome_cliente(card_id)
+            if valido:
+                nome_atual = resultado
+                mostrar_formulario_edicao = True
+            else:
+                mensagem = resultado
+        elif action == 'editar':
+            card_id = request.form.get('card_id')
+            novo_nome = request.form.get('novo_nome')
+            if not novo_nome:
+                mensagem = "Erro: Preencha o novo nome!"
+            else:
+                mensagem = atualizar_nome_cliente(card_id, novo_nome)
+                if "sucesso" in mensagem.lower():
+                    return redirect(url_for('index'))
+        elif action == 'mostrar_exclusao':
+            senha = request.form.get('senha')
+            if senha == "03842789":
+                clientes = listar_clientes()
+                mostrar_formulario_exclusao = True
+            else:
+                mensagem = "Senha incorreta!"
+        elif action == 'excluir':
+            card_id = request.form.get('card_id_excluir')
+            mensagem = excluir_cliente(card_id)
+            if "sucesso" in mensagem.lower():
+                return redirect(url_for('index'))
+        else:  # Cadastro de novo cliente
+            nome = request.form.get('nome')
+            card_id = request.form.get('card_id')
+            celular = request.form.get('celular')
+            if not nome:
+                mensagem = "Erro: Preencha o nome!"
+            elif not celular:
+                mensagem = "Erro: Preencha o celular!"
+            else:
+                valido, erro = validar_id(card_id)
+                if not valido:
+                    mensagem = erro
+                else:
+                    mensagem = cadastrar_cliente(nome, card_id, celular)
+                    if "sucesso" in mensagem.lower():
+                        return redirect(url_for('index'))
+    return render_template('cadastro.html', card_id=card_id, mensagem=mensagem, nome_atual=nome_atual, mostrar_formulario_edicao=mostrar_formulario_edicao, mostrar_formulario_exclusao=mostrar_formulario_exclusao, clientes=clientes)
+
 @app.route('/cliente', methods=['GET', 'POST'])
 def cliente():
     mensagem = None
