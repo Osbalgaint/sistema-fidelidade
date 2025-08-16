@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta de Cliente - Sistema de Fidelidade</title>
+    <style>
+        body {
+            background-image: url('/static/background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #333;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            width: 200px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .resultado {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Consulta de Cliente</h1>
+        <form method="POST" action="{{ url_for('cliente') }}">
+            <label for="celular">Número de Celular:</label><br>
+            <input type="text" id="celular" name="celular" required placeholder="Ex.: (11) 99999-9999"><br>
+            <button type="submit">Consultar</button>
+        </form>
+        {% if mensagem %}
+            <p>{{ mensagem }}</p>
+        {% endif %}
+        {% if cliente %}
+            <div class="resultado">
+                <p><strong>Nome:</strong> {{ cliente.nome }}</p>
+                <p><strong>Número do Cartão:</strong> {{ cliente.card_id }}</p>
+                <p><strong>Créditos:</strong> {{ cliente.creditos }}</p>
+                {% if cliente.data_expiracao %}
+                    <p><strong>Data de Expiração:</strong> {{ cliente.data_expiracao }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
