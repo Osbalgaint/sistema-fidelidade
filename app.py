@@ -4,9 +4,8 @@ from psycopg2.extras import DictCursor
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 app = Flask(__name__)
-
      # Conexão com banco de dados
-     DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
      def get_db_connection():
          conn = psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
