@@ -40,35 +40,38 @@
              {% if mensagem %}
                  <div class="alert alert-info">{{ mensagem }}</div>
              {% endif %}
-             <form method="post" class="mb-4">
+             <form method="post" class="mb-4" id="main-form">
                  <div class="mb-3">
                      <label for="card_id" class="form-label">ID do Cartão:</label>
                      <input type="text" class="form-control" id="card_id" name="card_id" value="{{ card_id_display }}" required>
                  </div>
                  <button type="submit" name="action" value="buscar" class="btn btn-primary">Buscar Cliente</button>
-                 <button type="submit" name="action" value="recarregar" class="btn btn-success">Recarregar Créditos</button>
-                 <input type="password" class="form-control d-inline-block w-auto" name="senha" placeholder="Senha" required>
-                 <div class="mb-3">
-                     <label for="quantidade" class="form-label">Quantidade de Créditos:</label>
-                     <input type="number" class="form-control d-inline-block w-auto" id="quantidade" name="quantidade" min="1">
-                     <button type="submit" name="action" value="adicionar_credito_manual" class="btn btn-success">Adicionar Créditos</button>
-                     <button type="submit" name="action" value="mostrar_empresas" class="btn btn-danger">Deduzir Créditos</button>
-                 </div>
+                 <button type="button" onclick="promptRecarregar()" class="btn btn-success">Recarregar Créditos</button>
+                 <button type="button" onclick="promptAdicionar()" class="btn btn-success">Adicionar Créditos</button>
+                 <button type="submit" name="action" value="mostrar_empresas" class="btn btn-danger">Deduzir Créditos</button>
                  {% if mostrar_empresas %}
-                     <div class="mb-3">
+                     <div class="mb-3 mt-3">
                          <label class="form-label">Selecione a Empresa:</label><br>
-                         <button type="submit" name="action" value="deduzir" class="btn btn-stout">
+                         <button type="submit" name="action" value="selecionar_empresa" class="btn btn-stout">
                              <input type="hidden" name="empresa" value="STOUT PIZZA">
-                             <input type="hidden" name="quantidade" value="1">
                              STOUT PIZZA
                          </button>
-                         <button type="submit" name="action" value="deduzir" class="btn btn-chama">
+                         <button type="submit" name="action" value="selecionar_empresa" class="btn btn-chama">
                              <input type="hidden" name="empresa" value="CHAAAMA CHOPP">
-                             <input type="hidden" name="quantidade" value="1">
                              CHAAAMA CHOPP
                          </button>
                      </div>
                  {% endif %}
+                 {% if mostrar_quantidade %}
+                     <div class="mb-3 mt-3">
+                         <label for="quantidade" class="form-label">Quantos alimentos foram consumidos pelo cliente com o desconto?</label>
+                         <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>
+                         <input type="hidden" name="empresa" value="{{ empresa_selecionada }}">
+                         <button type="submit" name="action" value="deduzir" class="btn btn-primary">Confirmar Dedução</button>
+                     </div>
+                 {% endif %}
+                 <input type="hidden" name="senha" id="senha">
+                 <input type="hidden" name="action" id="action">
              </form>
              {% if nome %}
                  <h3>Informações do Cliente</h3>
@@ -102,6 +105,29 @@
              <a href="{{ url_for('cliente') }}" class="btn btn-secondary">Consultar por Celular</a>
              <a href="{{ url_for('consulta') }}" class="btn btn-secondary">Listar Clientes</a>
          </div>
+         <script>
+             function promptRecarregar() {
+                 var senha = prompt("Digite a senha para recarregar créditos:");
+                 if (senha === "03842789") {
+                     document.getElementById("senha").value = senha;
+                     document.getElementById("action").value = "recarregar";
+                     document.getElementById("main-form").submit();
+                 } else {
+                     alert("Senha incorreta!");
+                 }
+             }
+
+             function promptAdicionar() {
+                 var senha = prompt("Digite a senha para adicionar créditos:");
+                 if (senha === "03842789") {
+                     document.getElementById("senha").value = senha;
+                     document.getElementById("action").value = "adicionar_credito_manual";
+                     document.getElementById("main-form").submit();
+                 } else {
+                     alert("Senha incorreta!");
+                 }
+             }
+         </script>
          <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
      </body>
      </html>

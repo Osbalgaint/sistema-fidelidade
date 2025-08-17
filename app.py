@@ -233,6 +233,8 @@ def index():
     expiracao = ""
     historico = []
     mostrar_empresas = False
+    mostrar_quantidade = False
+    empresa_selecionada = ""
     if request.method == 'POST':
         action = request.form.get('action')
         card_id = request.form.get('card_id')
@@ -253,6 +255,14 @@ def index():
                 mensagem = "Senha incorreta!"
         elif action == 'adicionar_credito_manual':
             senha = request.form.get('senha')
+            if senha == "03842789":
+                mensagem = "Por favor, insira a quantidade de créditos a adicionar."
+                nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+                card_id_display = card_id
+            else:
+                mensagem = "Senha incorreta!"
+        elif action == 'confirmar_adicao':
+            senha = request.form.get('senha')
             quantidade = request.form.get('quantidade')
             if senha == "03842789":
                 mensagem = adicionar_credito_manual(card_id, quantidade)
@@ -265,13 +275,20 @@ def index():
             card_id_display = card_id if nome != "Cliente não encontrado" else ""
             if creditos is not None:
                 mostrar_empresas = True
+        elif action == 'selecionar_empresa':
+            empresa = request.form.get('empresa')
+            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+            card_id_display = card_id if nome != "Cliente não encontrado" else ""
+            if creditos is not None:
+                mostrar_quantidade = True
+                empresa_selecionada = empresa
         elif action == 'deduzir':
             quantidade = request.form.get('quantidade')
             empresa = request.form.get('empresa')
             mensagem = deduzir_credito(card_id, quantidade, empresa)
             nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
             card_id_display = card_id
-    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, historico=historico, mostrar_empresas=mostrar_empresas)
+    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, historico=historico, mostrar_empresas=mostrar_empresas, mostrar_quantidade=mostrar_quantidade, empresa_selecionada=empresa_selecionada)
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
@@ -305,17 +322,15 @@ def cadastro():
             card_id_editar = request.form.get('card_id')
             novo_nome = request.form.get('novo_nome')
             novo_celular = request.form.get('novo_celular')
-            if not novo_nome or not novo_celular:
+            senha = request.form.get('senha')
+            if senha != "03842789":
+                mensagem = "Senha incorreta!"
+            elif not novo_nome or not novo_celular:
                 mensagem = "Erro: Preencha nome e celular!"
             else:
-                confirmar_edicao = True
-        elif action == 'confirmar_edicao':
-            card_id_editar = request.form.get('card_id')
-            novo_nome = request.form.get('novo_nome')
-            novo_celular = request.form.get('novo_celular')
-            mensagem = atualizar_nome_cliente(card_id_editar, novo_nome, novo_celular)
-            if "sucesso" in mensagem.lower():
-                return redirect(url_for('index'))
+                mensagem = atualizar_nome_cliente(card_id_editar, novo_nome, novo_celular)
+                if "sucesso" in mensagem.lower():
+                    return redirect(url_for('index'))
         elif action == 'mostrar_exclusao':
             senha = request.form.get('senha')
             if senha == "03842789":
@@ -332,9 +347,13 @@ def cadastro():
                 mensagem = "Cliente não encontrado!"
         elif action == 'confirmar_exclusao':
             card_id_excluir = request.form.get('card_id')
-            mensagem = excluir_cliente(card_id_excluir)
-            if "sucesso" in mensagem.lower():
-                return redirect(url_for('index'))
+            senha = request.form.get('senha')
+            if senha == "03842789":
+                mensagem = excluir_cliente(card_id_excluir)
+                if "sucesso" in mensagem.lower():
+                    return redirect(url_for('index'))
+            else:
+                mensagem = "Senha incorreta!"
         else:  # Cadastro de novo cliente
             nome = request.form.get('nome')
             card_id = request.form.get('card_id')
