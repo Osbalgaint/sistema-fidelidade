@@ -456,8 +456,6 @@ def editar():
 
 @app.route('/cliente', methods=['GET', 'POST'])
 def cliente():
-    if not usuario_autenticado():
-        return redirect(url_for('login'))
     mensagem = None
     cliente = None
     if request.method == 'POST':
