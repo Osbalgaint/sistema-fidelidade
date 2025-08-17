@@ -2,7 +2,7 @@ import os
 import psycopg
 from psycopg.rows import dict_row
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
@@ -13,7 +13,7 @@ def get_db_connection():
     conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     return conn
 
-# Cria tabela de clientes
+# Cria tabelas de clientes e pedidos
 conn = get_db_connection()
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS clientes (
@@ -24,6 +24,14 @@ c.execute('''CREATE TABLE IF NOT EXISTS clientes (
     creditos INTEGER NOT NULL,
     data_expiracao DATE,
     celular TEXT NOT NULL
+)''')
+c.execute('''CREATE TABLE IF NOT EXISTS pedidos (
+    id SERIAL PRIMARY KEY,
+    card_id TEXT NOT NULL,
+    nome_cliente TEXT NOT NULL,
+    empresa TEXT NOT NULL,
+    quantidade_deduzida INTEGER NOT NULL,
+    horario TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )''')
 conn.commit()
 conn.close()
@@ -65,6 +73,7 @@ def excluir_cliente(card_id):
     result = c.fetchone()
     if result:
         c.execute("DELETE FROM clientes WHERE card_id = %s", (card_id,))
+        c.execute("DELETE FROM pedidos WHERE card_id = %s", (card_id,))
         conn.commit()
         conn.close()
         return "Cliente excluído com sucesso!"
@@ -78,6 +87,7 @@ def atualizar_nome_cliente(card_id, novo_nome, novo_celular):
     result = c.fetchone()
     if result:
         c.execute("UPDATE clientes SET nome = %s, celular = %s WHERE card_id = %s", (novo_nome, novo_celular, card_id))
+        c.execute("UPDATE pedidos SET nome_cliente = %s WHERE card_id = %s", (novo_nome, card_id))
         conn.commit()
         conn.close()
         return "Cliente atualizado com sucesso!"
@@ -143,7 +153,15 @@ def adicionar_credito_manual(card_id, quantidade):
     conn.close()
     return "Cliente não encontrado."
 
-def deduzir_credito(card_id, quantidade):
+def registrar_pedido(card_id, nome_cliente, empresa, quantidade_deduzida):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("INSERT INTO pedidos (card_id, nome_cliente, empresa, quantidade_deduzida) VALUES (%s, %s, %s, %s)",
+              (card_id, nome_cliente, empresa, quantidade_deduzida))
+    conn.commit()
+    conn.close()
+
+def deduzir_credito(card_id, quantidade, empresa):
     try:
         quantidade = int(quantidade)
         if quantidade <= 0:
@@ -154,11 +172,12 @@ def deduzir_credito(card_id, quantidade):
     hoje = datetime.now().date()
     conn = get_db_connection()
     c = conn.cursor()
-    c.execute("SELECT creditos, data_expiracao FROM clientes WHERE card_id = %s", (card_id,))
+    c.execute("SELECT creditos, data_expiracao, nome FROM clientes WHERE card_id = %s", (card_id,))
     result = c.fetchone()
     if result:
         creditos = result['creditos']
         expiracao = result['data_expiracao']
+        nome_cliente = result['nome']
         expiracao_date = datetime.strptime(str(expiracao), '%Y-%m-%d').date() if expiracao else hoje
         if hoje > expiracao_date:
             conn.close()
@@ -167,12 +186,21 @@ def deduzir_credito(card_id, quantidade):
             novo_creditos = creditos - quantidade
             c.execute("UPDATE clientes SET creditos = %s WHERE card_id = %s", (novo_creditos, card_id))
             conn.commit()
+            registrar_pedido(card_id, nome_cliente, empresa, quantidade)
             conn.close()
-            return f"{quantidade} crédito(s) deduzido(s). Créditos restantes: {novo_creditos}"
+            return f"{quantidade} crédito(s) deduzido(s) para {empresa}. Créditos restantes: {novo_creditos}"
         conn.close()
         return f"Erro: Créditos insuficientes. Disponível: {creditos}, solicitado: {quantidade}."
     conn.close()
     return "Cliente não encontrado."
+
+def obter_historico(card_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT empresa, quantidade_deduzida, horario FROM pedidos WHERE card_id = %s ORDER BY horario DESC", (card_id,))
+    result = c.fetchall()
+    conn.close()
+    return result
 
 def buscar_info_cliente(card_id):
     hoje = datetime.now().date()
@@ -191,8 +219,9 @@ def buscar_info_cliente(card_id):
         else:
             dias_restantes = (expiracao_date - hoje).days
         expiracao_formatada = expiracao_date.strftime('%d/%m/%Y')
-        return nome, creditos, dias_restantes, expiracao_formatada
-    return "Cliente não encontrado", None, None, None
+        historico = obter_historico(card_id)
+        return nome, creditos, dias_restantes, expiracao_formatada, historico
+    return "Cliente não encontrado", None, None, None, []
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -202,13 +231,15 @@ def index():
     creditos = ""
     dias = ""
     expiracao = ""
+    historico = []
+    mostrar_empresas = False
     if request.method == 'POST':
         action = request.form.get('action')
         card_id = request.form.get('card_id')
         if not card_id:
             mensagem = "Erro: ID do cartão é obrigatório!"
         elif action == 'buscar':
-            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
+            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
             card_id_display = card_id if nome != "Cliente não encontrado" else ""
             if creditos is None:
                 nome = "Cliente não encontrado"
@@ -216,7 +247,7 @@ def index():
             senha = request.form.get('senha')
             if senha == "03842789":
                 mensagem = recarregar_creditos(card_id)
-                nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
+                nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
                 card_id_display = card_id
             else:
                 mensagem = "Senha incorreta!"
@@ -225,16 +256,22 @@ def index():
             quantidade = request.form.get('quantidade')
             if senha == "03842789":
                 mensagem = adicionar_credito_manual(card_id, quantidade)
-                nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
+                nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
                 card_id_display = card_id
             else:
                 mensagem = "Senha incorreta!"
+        elif action == 'mostrar_empresas':
+            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+            card_id_display = card_id if nome != "Cliente não encontrado" else ""
+            if creditos is not None:
+                mostrar_empresas = True
         elif action == 'deduzir':
             quantidade = request.form.get('quantidade')
-            mensagem = deduzir_credito(card_id, quantidade)
-            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
+            empresa = request.form.get('empresa')
+            mensagem = deduzir_credito(card_id, quantidade, empresa)
+            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
             card_id_display = card_id
-    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao)
+    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, historico=historico, mostrar_empresas=mostrar_empresas)
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
