@@ -136,11 +136,10 @@ def adicionar_credito_manual(card_id, quantidade):
     hoje = datetime.now().date()
     conn = get_db_connection()
     c = conn.cursor()
-    c.execute("SELECT creditos, data_expiracao, nome FROM clientes WHERE card_id = %s", (card_id,))
+    c.execute("SELECT creditos, data_expiracao FROM clientes WHERE card_id = %s", (card_id,))
     result = c.fetchone()
     if result:
         creditos = result['creditos']
-        nome_cliente = result['nome']
         expiracao = result['data_expiracao']
         expiracao_date = datetime.strptime(str(expiracao), '%Y-%m-%d').date() if expiracao else hoje
         if hoje > expiracao_date:
@@ -148,8 +147,6 @@ def adicionar_credito_manual(card_id, quantidade):
             return "Créditos expirados. Necessário recarregar."
         novo_creditos = creditos + quantidade
         c.execute("UPDATE clientes SET creditos = %s WHERE card_id = %s", (novo_creditos, card_id))
-        c.execute("INSERT INTO pedidos (card_id, nome_cliente, empresa, quantidade_deduzida) VALUES (%s, %s, %s, %s)",
-                  (card_id, nome_cliente, 'Adição Manual', quantidade))
         conn.commit()
         conn.close()
         return f"{quantidade} crédito(s) adicionado(s) manualmente. Créditos totais: {novo_creditos}"
@@ -172,9 +169,6 @@ def deduzir_credito(card_id, quantidade, empresa):
     except ValueError:
         return "Erro: Insira um número válido."
     
-    if empresa not in ['STOUT PIZZA', 'CHAAAMA CHOPP']:
-        return "Erro: Empresa inválida."
-    
     hoje = datetime.now().date()
     conn = get_db_connection()
     c = conn.cursor()
@@ -191,9 +185,8 @@ def deduzir_credito(card_id, quantidade, empresa):
         if creditos >= quantidade:
             novo_creditos = creditos - quantidade
             c.execute("UPDATE clientes SET creditos = %s WHERE card_id = %s", (novo_creditos, card_id))
-            c.execute("INSERT INTO pedidos (card_id, nome_cliente, empresa, quantidade_deduzida) VALUES (%s, %s, %s, %s)",
-                      (card_id, nome_cliente, empresa, -quantidade))
             conn.commit()
+            registrar_pedido(card_id, nome_cliente, empresa, quantidade)
             conn.close()
             return f"{quantidade} crédito(s) deduzido(s) para {empresa}. Créditos restantes: {novo_creditos}"
         conn.close()
@@ -282,23 +275,17 @@ def index():
                 mostrar_empresas = True
         elif action == 'selecionar_empresa':
             empresa = request.form.get('empresa')
-            if empresa not in ['STOUT PIZZA', 'CHAAAMA CHOPP']:
-                mensagem = "Erro: Empresa inválida!"
-            else:
-                nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
-                card_id_display = card_id if nome != "Cliente não encontrado" else ""
-                if creditos is not None:
-                    mostrar_quantidade = True
-                    empresa_selecionada = empresa
+            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
+            card_id_display = card_id if nome != "Cliente não encontrado" else ""
+            if creditos is not None:
+                mostrar_quantidade = True
+                empresa_selecionada = empresa
         elif action == 'deduzir':
             quantidade = request.form.get('quantidade')
             empresa = request.form.get('empresa')
-            if empresa not in ['STOUT PIZZA', 'CHAAAMA CHOPP']:
-                mensagem = "Erro: Empresa inválida!"
-            else:
-                mensagem = deduzir_credito(card_id, quantidade, empresa)
-                nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
-                card_id_display = card_id
+            mensagem = deduzir_credito(card_id, quantidade, empresa)
+            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
+            card_id_display = card_id
     return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, mostrar_empresas=mostrar_empresas, mostrar_quantidade=mostrar_quantidade, empresa_selecionada=empresa_selecionada, mostrar_adicionar_credito=mostrar_adicionar_credito)
 
 @app.route('/historico', methods=['GET', 'POST'])

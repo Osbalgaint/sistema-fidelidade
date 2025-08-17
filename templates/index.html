@@ -18,14 +18,6 @@
             border-radius: 10px;
             margin-top: 50px;
         }
-        .btn-stout {
-            background-color: #ff0000;
-            color: white;
-        }
-        .btn-chama {
-            background-color: #ffff00;
-            color: black;
-        }
         .btn {
             margin: 5px;
         }
@@ -46,42 +38,49 @@
             <button type="button" onclick="promptRecarregar()" class="btn btn-success">Recarregar Créditos</button>
             <button type="button" onclick="promptAdicionar()" class="btn btn-success">Adicionar Créditos</button>
             <button type="submit" name="action" value="mostrar_empresas" class="btn btn-danger">Deduzir Créditos</button>
-            {% if mostrar_empresas %}
-                <div class="mb-3 mt-3">
-                    <label class="form-label">Selecione a Empresa:</label><br>
-                    <button type="submit" name="action" value="selecionar_empresa" class="btn btn-stout">
-                        <input type="hidden" name="empresa" value="STOUT PIZZA">
-                        STOUT PIZZA
-                    </button>
-                    <button type="submit" name="action" value="selecionar_empresa" class="btn btn-chama">
-                        <input type="hidden" name="empresa" value="CHAAAMA CHOPP">
-                        CHAAAMA CHOPP
-                    </button>
-                </div>
-            {% endif %}
-            {% if mostrar_quantidade %}
-                <div class="mb-3 mt-3">
-                    {% if empresa_selecionada == 'STOUT PIZZA' %}
-                        <label for="quantidade" class="form-label">Quantas pizzas foram pedidas com desconto?</label>
-                    {% else empresa_selecionada == 'CHAAAMA CHOPP' %}
-                        <label for="quantidade" class="form-label">Quantas comidas foram pedidas com desconto?</label>
-                    {% endif %}
-                    <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>
-                    <input type="hidden" name="empresa" value="{{ empresa_selecionada }}">
-                    <button type="submit" name="action" value="deduzir" class="btn btn-primary">Confirmar Dedução</button>
-                </div>
-            {% endif %}
-            {% if mostrar_adicionar_credito %}
-                <div class="mb-3 mt-3">
-                    <label for="quantidade" class="form-label">Quantos créditos deseja adicionar?</label>
-                    <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>
-                    <input type="hidden" name="senha" value="03842789">
-                    <button type="submit" name="action" value="confirmar_adicao" class="btn btn-success">Confirmar Adição</button>
-                </div>
-            {% endif %}
             <input type="hidden" name="senha" id="senha">
             <input type="hidden" name="action" id="action">
         </form>
+        {% if mostrar_empresas %}
+            <form method="post" class="mb-3 mt-3">
+                <div class="mb-3">
+                    <label for="empresa" class="form-label">Selecione a Empresa:</label>
+                    <select class="form-control" id="empresa" name="empresa" required>
+                        <option value="" disabled selected>Escolha uma empresa</option>
+                        <option value="STOUT PIZZA">STOUT PIZZA</option>
+                        <option value="CHAAAMA CHOPP">CHAAAMA CHOPP</option>
+                    </select>
+                </div>
+                <input type="hidden" name="card_id" value="{{ card_id_display }}">
+                <button type="submit" name="action" value="selecionar_empresa" class="btn btn-primary">Confirmar Empresa</button>
+            </form>
+        {% endif %}
+        {% if mostrar_quantidade %}
+            <form method="post" class="mb-3 mt-3">
+                <div class="mb-3">
+                    {% if empresa_selecionada == 'STOUT PIZZA' %}
+                        <label for="quantidade" class="form-label">Quantas pizzas o cliente consumiu com desconto?</label>
+                    {% else %}
+                        <label for="quantidade" class="form-label">Quantos alimentos o cliente consumiu com desconto?</label>
+                    {% endif %}
+                    <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>
+                    <input type="hidden" name="card_id" value="{{ card_id_display }}">
+                    <input type="hidden" name="empresa" value="{{ empresa_selecionada }}">
+                    <button type="submit" name="action" value="deduzir" class="btn btn-primary">Confirmar Dedução</button>
+                </div>
+            </form>
+        {% endif %}
+        {% if mostrar_adicionar_credito %}
+            <form method="post" class="mb-3 mt-3">
+                <div class="mb-3">
+                    <label for="quantidade" class="form-label">Quantos créditos deseja adicionar?</label>
+                    <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>
+                    <input type="hidden" name="card_id" value="{{ card_id_display }}">
+                    <input type="hidden" name="senha" value="03842789">
+                    <button type="submit" name="action" value="confirmar_adicao" class="btn btn-success">Confirmar Adição</button>
+                </div>
+            </form>
+        {% endif %}
         {% if nome %}
             <h3>Informações do Cliente</h3>
             <p><strong>Nome:</strong> {{ nome }}</p>
