@@ -3,7 +3,6 @@ import psycopg2
 from psycopg2.extras import DictCursor
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for
-
 app = Flask(__name__)
 
      # Conexão com banco de dados
