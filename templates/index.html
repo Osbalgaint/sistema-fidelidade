@@ -40,9 +40,19 @@
             <button type="submit" name="action" value="mostrar_empresas" class="btn btn-danger">Deduzir Créditos</button>
             <a href="{{ url_for('cadastro') }}" class="btn btn-secondary">Cadastrar Cliente</a>
             <a href="{{ url_for('editar') }}" class="btn btn-secondary">Editar Cliente</a>
+            <button type="submit" name="action" value="mostrar_senha_exclusao" class="btn btn-danger">Excluir Cliente</button>
             <input type="hidden" name="senha" id="senha">
             <input type="hidden" name="action" id="action">
         </form>
+        {% if mostrar_senha_exclusao %}
+            <form method="post" class="mb-3 mt-3">
+                <div class="mb-3">
+                    <label for="senha_exclusao" class="form-label">Digite a senha do sistema:</label>
+                    <input type="password" class="form-control" id="senha_exclusao" name="senha" required>
+                </div>
+                <button type="submit" name="action" value="verificar_senha_exclusao" class="btn btn-primary">Confirmar Senha</button>
+            </form>
+        {% endif %}
         {% if mostrar_empresas %}
             <form method="post" class="mb-3 mt-3">
                 <div class="mb-3">

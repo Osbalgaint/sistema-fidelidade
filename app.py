@@ -311,10 +311,19 @@ def index():
     mostrar_quantidade = False
     empresa_selecionada = ""
     mostrar_adicionar_credito = False
+    mostrar_senha_exclusao = False
     if request.method == 'POST':
         action = request.form.get('action')
         card_id = request.form.get('card_id')
-        if not card_id:
+        if action == 'mostrar_senha_exclusao':
+            mostrar_senha_exclusao = True
+        elif action == 'verificar_senha_exclusao':
+            senha = request.form.get('senha')
+            if senha == "03842789":
+                return redirect(url_for('excluir'))
+            else:
+                mensagem = "Senha incorreta!"
+        elif not card_id:
             mensagem = "Erro: ID do cartão é obrigatório!"
         elif action == 'buscar':
             nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
@@ -369,7 +378,7 @@ def index():
                 mensagem = deduzir_credito(card_id, quantidade, empresa)
                 nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
                 card_id_display = card_id
-    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, mostrar_empresas=mostrar_empresas, mostrar_quantidade=mostrar_quantidade, empresa_selecionada=empresa_selecionada, mostrar_adicionar_credito=mostrar_adicionar_credito)
+    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, mostrar_empresas=mostrar_empresas, mostrar_quantidade=mostrar_quantidade, empresa_selecionada=empresa_selecionada, mostrar_adicionar_credito=mostrar_adicionar_credito, mostrar_senha_exclusao=mostrar_senha_exclusao)
 
 @app.route('/historico', methods=['GET', 'POST'])
 def historico():
@@ -453,6 +462,34 @@ def editar():
                 valido, nome_atual, celular_atual = buscar_nome_cliente(card_id)
                 mostrar_formulario = True
     return render_template('editar.html', mensagem=mensagem, card_id=card_id, nome_atual=nome_atual, celular_atual=celular_atual, mostrar_formulario=mostrar_formulario)
+
+@app.route('/excluir', methods=['GET', 'POST'])
+def excluir():
+    if not usuario_autenticado():
+        return redirect(url_for('login'))
+    mensagem = ""
+    card_id = ""
+    clientes = listar_clientes()
+    mostrar_confirmacao = False
+    nome_cliente = ""
+    if request.method == 'POST':
+        action = request.form.get('action')
+        card_id = request.form.get('card_id')
+        if action == 'buscar':
+            if not card_id:
+                mensagem = "Erro: ID do cartão é obrigatório!"
+            else:
+                valido, nome_cliente, _ = buscar_nome_cliente(card_id)
+                if valido:
+                    mostrar_confirmacao = True
+                else:
+                    mensagem = nome_cliente
+        elif action == 'confirmar_exclusao':
+            mensagem = excluir_cliente(card_id)
+            if "sucesso" in mensagem.lower():
+                return redirect(url_for('index'))
+            clientes = listar_clientes()
+    return render_template('excluir.html', mensagem=mensagem, card_id=card_id, clientes=clientes, mostrar_confirmacao=mostrar_confirmacao, nome_cliente=nome_cliente)
 
 @app.route('/cliente', methods=['GET', 'POST'])
 def cliente():
