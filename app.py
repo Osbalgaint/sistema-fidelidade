@@ -1,6 +1,6 @@
 import os
-import psycopg2
-from psycopg2.extras import DictCursor
+import psycopg
+from psycopg.rows import dict_row
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 
@@ -10,7 +10,7 @@ app = Flask(__name__)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
+    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     return conn
 
 # Cria tabela de clientes
@@ -95,7 +95,7 @@ def cadastrar_cliente(nome, card_id, celular):
         conn.commit()
         conn.close()
         return "Cliente cadastrado com sucesso! Créditos iniciais: 10"
-    except psycopg2.IntegrityError:
+    except psycopg.errors.UniqueViolation:
         conn.close()
         return "Erro: ID do cartão já existe."
 
