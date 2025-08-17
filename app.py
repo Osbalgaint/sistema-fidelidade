@@ -287,9 +287,12 @@ def index():
         elif action == 'deduzir':
             quantidade = request.form.get('quantidade')
             empresa = request.form.get('empresa')
-            mensagem = deduzir_credito(card_id, quantidade, empresa)
-            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
-            card_id_display = card_id
+            if not empresa:
+                mensagem = "Erro: Nenhuma empresa selecionada!"
+            else:
+                mensagem = deduzir_credito(card_id, quantidade, empresa)
+                nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
+                card_id_display = card_id
     return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, mostrar_empresas=mostrar_empresas, mostrar_quantidade=mostrar_quantidade, empresa_selecionada=empresa_selecionada, mostrar_adicionar_credito=mostrar_adicionar_credito)
 
 @app.route('/historico', methods=['GET', 'POST'])

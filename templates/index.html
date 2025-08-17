@@ -61,7 +61,11 @@
             {% endif %}
             {% if mostrar_quantidade %}
                 <div class="mb-3 mt-3">
-                    <label for="quantidade" class="form-label">Quantos alimentos foram consumidos pelo cliente com o desconto?</label>
+                    {% if empresa_selecionada == 'STOUT PIZZA' %}
+                        <label for="quantidade" class="form-label">Quantas pizzas foram pedidas com desconto?</label>
+                    {% else %}
+                        <label for="quantidade" class="form-label">Quantas comidas foram pedidas com desconto?</label>
+                    {% endif %}
                     <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>
                     <input type="hidden" name="empresa" value="{{ empresa_selecionada }}">
                     <button type="submit" name="action" value="deduzir" class="btn btn-primary">Confirmar Dedução</button>
