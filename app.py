@@ -2,9 +2,10 @@ import os
 import psycopg
 from psycopg.rows import dict_row
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'sua_chave_secreta_aqui')  # Defina uma chave secreta no Render
 
 # Conexão com banco de dados
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -13,7 +14,7 @@ def get_db_connection():
     conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     return conn
 
-# Cria tabelas de clientes e pedidos
+# Cria tabelas de clientes, pedidos e usuarios
 conn = get_db_connection()
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS clientes (
@@ -33,8 +34,49 @@ c.execute('''CREATE TABLE IF NOT EXISTS pedidos (
     quantidade_deduzida INTEGER NOT NULL,
     horario TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )''')
+c.execute('''CREATE TABLE IF NOT EXISTS usuarios (
+    id SERIAL PRIMARY KEY,
+    login TEXT UNIQUE NOT NULL,
+    senha TEXT
+)''')
 conn.commit()
 conn.close()
+
+# Função para verificar autenticação
+def usuario_autenticado():
+    return 'login' in session
+
+# Função para validar login
+def validar_login(login, senha):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT senha FROM usuarios WHERE login = %s", (login,))
+    result = c.fetchone()
+    conn.close()
+    if result and result['senha'] and result['senha'] == senha:
+        return True
+    return False
+
+# Função para configurar senha
+def configurar_senha(login, senha, confirmar_senha):
+    if senha != confirmar_senha:
+        return False, "Erro: As senhas não coincidem!"
+    if login not in ['JORDANA', 'NETO', 'HUGO', 'SIMONE', 'VITÓRIA', 'MORGANA', 'HENRIQUE', 'JOÃO', 'ÉRIKA', 'VIVIANA']:
+        return False, "Erro: Login inválido!"
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT senha FROM usuarios WHERE login = %s", (login,))
+    result = c.fetchone()
+    if result:
+        if result['senha'] is not None:
+            conn.close()
+            return False, "Erro: Este usuário já possui uma senha configurada!"
+        c.execute("UPDATE usuarios SET senha = %s WHERE login = %s", (senha, login))
+        conn.commit()
+        conn.close()
+        return True, "Senha configurada com sucesso!"
+    conn.close()
+    return False, "Erro: Login não encontrado!"
 
 def validar_id(card_id):
     if not card_id.startswith('CARD'):
@@ -230,8 +272,35 @@ def buscar_info_cliente(card_id):
         return nome, creditos, dias_restantes, expiracao_formatada
     return "Cliente não encontrado", None, None, None
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    mensagem = ""
+    if request.method == 'POST':
+        login = request.form.get('login')
+        senha = request.form.get('senha')
+        if validar_login(login, senha):
+            session['login'] = login
+            return redirect(url_for('index'))
+        mensagem = "Login ou senha inválidos!"
+    return render_template('login.html', mensagem=mensagem)
+
+@app.route('/primeiro_acesso', methods=['GET', 'POST'])
+def primeiro_acesso():
+    mensagem = ""
+    if request.method == 'POST':
+        login = request.form.get('login')
+        senha = request.form.get('senha')
+        confirmar_senha = request.form.get('confirmar_senha')
+        sucesso, mensagem = configurar_senha(login, senha, confirmar_senha)
+        if sucesso:
+            session['login'] = login
+            return redirect(url_for('index'))
+    return render_template('primeiro_acesso.html', mensagem=mensagem)
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    if not usuario_autenticado():
+        return redirect(url_for('login'))
     mensagem = ""
     card_id_display = ""
     nome = ""
@@ -304,6 +373,8 @@ def index():
 
 @app.route('/historico', methods=['GET', 'POST'])
 def historico():
+    if not usuario_autenticado():
+        return redirect(url_for('login'))
     mensagem = ""
     historico = []
     card_id_display = ""
@@ -329,6 +400,8 @@ def historico():
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
+    if not usuario_autenticado():
+        return redirect(url_for('login'))
     mensagem = ""
     card_id = "CARD"
     if request.method == 'POST':
@@ -349,6 +422,8 @@ def cadastro():
 
 @app.route('/editar', methods=['GET', 'POST'])
 def editar():
+    if not usuario_autenticado():
+        return redirect(url_for('login'))
     mensagem = ""
     card_id = ""
     nome_atual = ""
@@ -381,6 +456,8 @@ def editar():
 
 @app.route('/cliente', methods=['GET', 'POST'])
 def cliente():
+    if not usuario_autenticado():
+        return redirect(url_for('login'))
     mensagem = None
     cliente = None
     if request.method == 'POST':
@@ -399,6 +476,8 @@ def cliente():
 
 @app.route('/consulta')
 def consulta():
+    if not usuario_autenticado():
+        return redirect(url_for('login'))
     conn = get_db_connection()
     c = conn.cursor()
     c.execute("SELECT card_id, nome, creditos, data_expiracao FROM clientes ORDER BY id ASC")
