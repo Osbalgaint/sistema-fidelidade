@@ -63,7 +63,7 @@
                 <div class="mb-3 mt-3">
                     {% if empresa_selecionada == 'STOUT PIZZA' %}
                         <label for="quantidade" class="form-label">Quantas pizzas foram pedidas com desconto?</label>
-                    {% else %}
+                    {% else empresa_selecionada == 'CHAAAMA CHOPP' %}
                         <label for="quantidade" class="form-label">Quantas comidas foram pedidas com desconto?</label>
                     {% endif %}
                     <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>

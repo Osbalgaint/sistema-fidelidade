@@ -172,6 +172,9 @@ def deduzir_credito(card_id, quantidade, empresa):
     except ValueError:
         return "Erro: Insira um número válido."
     
+    if empresa not in ['STOUT PIZZA', 'CHAAAMA CHOPP']:
+        return "Erro: Empresa inválida."
+    
     hoje = datetime.now().date()
     conn = get_db_connection()
     c = conn.cursor()
@@ -279,16 +282,19 @@ def index():
                 mostrar_empresas = True
         elif action == 'selecionar_empresa':
             empresa = request.form.get('empresa')
-            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
-            card_id_display = card_id if nome != "Cliente não encontrado" else ""
-            if creditos is not None:
-                mostrar_quantidade = True
-                empresa_selecionada = empresa
+            if empresa not in ['STOUT PIZZA', 'CHAAAMA CHOPP']:
+                mensagem = "Erro: Empresa inválida!"
+            else:
+                nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
+                card_id_display = card_id if nome != "Cliente não encontrado" else ""
+                if creditos is not None:
+                    mostrar_quantidade = True
+                    empresa_selecionada = empresa
         elif action == 'deduzir':
             quantidade = request.form.get('quantidade')
             empresa = request.form.get('empresa')
-            if not empresa:
-                mensagem = "Erro: Nenhuma empresa selecionada!"
+            if empresa not in ['STOUT PIZZA', 'CHAAAMA CHOPP']:
+                mensagem = "Erro: Empresa inválida!"
             else:
                 mensagem = deduzir_credito(card_id, quantidade, empresa)
                 nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
