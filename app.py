@@ -136,10 +136,11 @@ def adicionar_credito_manual(card_id, quantidade):
     hoje = datetime.now().date()
     conn = get_db_connection()
     c = conn.cursor()
-    c.execute("SELECT creditos, data_expiracao FROM clientes WHERE card_id = %s", (card_id,))
+    c.execute("SELECT creditos, data_expiracao, nome FROM clientes WHERE card_id = %s", (card_id,))
     result = c.fetchone()
     if result:
         creditos = result['creditos']
+        nome_cliente = result['nome']
         expiracao = result['data_expiracao']
         expiracao_date = datetime.strptime(str(expiracao), '%Y-%m-%d').date() if expiracao else hoje
         if hoje > expiracao_date:
@@ -147,6 +148,8 @@ def adicionar_credito_manual(card_id, quantidade):
             return "Créditos expirados. Necessário recarregar."
         novo_creditos = creditos + quantidade
         c.execute("UPDATE clientes SET creditos = %s WHERE card_id = %s", (novo_creditos, card_id))
+        c.execute("INSERT INTO pedidos (card_id, nome_cliente, empresa, quantidade_deduzida) VALUES (%s, %s, %s, %s)",
+                  (card_id, nome_cliente, 'Adição Manual', quantidade))
         conn.commit()
         conn.close()
         return f"{quantidade} crédito(s) adicionado(s) manualmente. Créditos totais: {novo_creditos}"
@@ -185,8 +188,9 @@ def deduzir_credito(card_id, quantidade, empresa):
         if creditos >= quantidade:
             novo_creditos = creditos - quantidade
             c.execute("UPDATE clientes SET creditos = %s WHERE card_id = %s", (novo_creditos, card_id))
+            c.execute("INSERT INTO pedidos (card_id, nome_cliente, empresa, quantidade_deduzida) VALUES (%s, %s, %s, %s)",
+                      (card_id, nome_cliente, empresa, -quantidade))
             conn.commit()
-            registrar_pedido(card_id, nome_cliente, empresa, quantidade)
             conn.close()
             return f"{quantidade} crédito(s) deduzido(s) para {empresa}. Créditos restantes: {novo_creditos}"
         conn.close()
