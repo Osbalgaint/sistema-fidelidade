@@ -29,9 +29,6 @@
         .btn {
             margin: 5px;
         }
-        .historico-table {
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
@@ -87,28 +84,8 @@
             <p><strong>Créditos:</strong> {{ creditos }}</p>
             <p><strong>Dias Restantes:</strong> {{ dias }}</p>
             <p><strong>Data de Expiração:</strong> {{ expiracao }}</p>
-            {% if historico %}
-                <h4>Histórico de Pedidos</h4>
-                <table class="table table-bordered table-striped historico-table">
-                    <thead>
-                        <tr>
-                            <th>Empresa</th>
-                            <th>Quantidade</th>
-                            <th>Horário</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for pedido in historico %}
-                            <tr>
-                                <td>{{ pedido.empresa }}</td>
-                                <td>{{ pedido.quantidade_deduzida | int }}</td>
-                                <td>{{ pedido.horario.strftime('%d/%m/%Y %H:%M:%S') }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
         {% endif %}
+        <a href="{{ url_for('historico') }}" class="btn btn-info">Histórico</a>
         <a href="{{ url_for('cadastro') }}" class="btn btn-secondary">Cadastrar/Editar/Excluir</a>
         <a href="{{ url_for('cliente') }}" class="btn btn-secondary">Consultar por Celular</a>
         <a href="{{ url_for('consulta') }}" class="btn btn-secondary">Listar Clientes</a>

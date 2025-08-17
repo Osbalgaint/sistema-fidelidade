@@ -223,9 +223,8 @@ def buscar_info_cliente(card_id):
         else:
             dias_restantes = (expiracao_date - hoje).days
         expiracao_formatada = expiracao_date.strftime('%d/%m/%Y')
-        historico = obter_historico(card_id)
-        return nome, creditos, dias_restantes, expiracao_formatada, historico
-    return "Cliente não encontrado", None, None, None, []
+        return nome, creditos, dias_restantes, expiracao_formatada
+    return "Cliente não encontrado", None, None, None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -235,7 +234,6 @@ def index():
     creditos = ""
     dias = ""
     expiracao = ""
-    historico = []
     mostrar_empresas = False
     mostrar_quantidade = False
     empresa_selecionada = ""
@@ -246,7 +244,7 @@ def index():
         if not card_id:
             mensagem = "Erro: ID do cartão é obrigatório!"
         elif action == 'buscar':
-            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
             card_id_display = card_id if nome != "Cliente não encontrado" else ""
             if creditos is None:
                 nome = "Cliente não encontrado"
@@ -254,14 +252,14 @@ def index():
             senha = request.form.get('senha')
             if senha == "03842789":
                 mensagem = recarregar_creditos(card_id)
-                nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+                nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
                 card_id_display = card_id
             else:
                 mensagem = "Senha incorreta!"
         elif action == 'adicionar_credito_manual':
             senha = request.form.get('senha')
             if senha == "03842789":
-                nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+                nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
                 card_id_display = card_id if nome != "Cliente não encontrado" else ""
                 if creditos is not None:
                     mostrar_adicionar_credito = True
@@ -272,16 +270,16 @@ def index():
         elif action == 'confirmar_adicao':
             quantidade = request.form.get('quantidade')
             mensagem = adicionar_credito_manual(card_id, quantidade)
-            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
             card_id_display = card_id
         elif action == 'mostrar_empresas':
-            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
             card_id_display = card_id if nome != "Cliente não encontrado" else ""
             if creditos is not None:
                 mostrar_empresas = True
         elif action == 'selecionar_empresa':
             empresa = request.form.get('empresa')
-            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
             card_id_display = card_id if nome != "Cliente não encontrado" else ""
             if creditos is not None:
                 mostrar_quantidade = True
@@ -290,9 +288,34 @@ def index():
             quantidade = request.form.get('quantidade')
             empresa = request.form.get('empresa')
             mensagem = deduzir_credito(card_id, quantidade, empresa)
-            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+            nome, creditos, dias, expiracao = buscar_info_cliente(card_id)
             card_id_display = card_id
-    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, historico=historico, mostrar_empresas=mostrar_empresas, mostrar_quantidade=mostrar_quantidade, empresa_selecionada=empresa_selecionada, mostrar_adicionar_credito=mostrar_adicionar_credito)
+    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, mostrar_empresas=mostrar_empresas, mostrar_quantidade=mostrar_quantidade, empresa_selecionada=empresa_selecionada, mostrar_adicionar_credito=mostrar_adicionar_credito)
+
+@app.route('/historico', methods=['GET', 'POST'])
+def historico():
+    mensagem = ""
+    historico = []
+    card_id_display = ""
+    mostrar_formulario = False
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'verificar_senha':
+            senha = request.form.get('senha')
+            if senha == "03842789":
+                mostrar_formulario = True
+            else:
+                mensagem = "Senha incorreta!"
+        elif action == 'buscar_historico':
+            card_id = request.form.get('card_id')
+            if not card_id:
+                mensagem = "Erro: ID do cartão é obrigatório!"
+            else:
+                historico = obter_historico(card_id)
+                card_id_display = card_id
+                if not historico:
+                    mensagem = "Nenhum histórico encontrado para este cliente."
+    return render_template('historico.html', mensagem=mensagem, historico=historico, card_id_display=card_id_display, mostrar_formulario=mostrar_formulario)
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():

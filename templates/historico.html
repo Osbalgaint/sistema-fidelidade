@@ -1,0 +1,124 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STOUT PIZZA & CHAMA CHOPP - Histórico de Transações</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url('/static/background.png');
+            background-size: cover;
+            background-attachment: fixed;
+            color: #333;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            margin-top: 50px;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .historico-table {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Histórico de Transações</h1>
+        {% if mensagem %}
+            <div class="alert alert-info">{{ mensagem }}</div>
+        {% endif %}
+        <form method="post" class="mb-4" id="historico-form">
+            {% if not mostrar_formulario %}
+                <button type="button" onclick="promptSenha()" class="btn btn-info">Acessar Histórico</button>
+                <input type="hidden" name="senha" id="senha">
+                <input type="hidden" name="action" id="action" value="verificar_senha">
+            {% else %}
+                <div class="mb-3">
+                    <label for="card_id" class="form-label">ID do Cartão:</label>
+                    <input type="text" class="form-control" id="card_id" name="card_id" value="{{ card_id_display }}" required>
+                </div>
+                <button type="submit" name="action" value="buscar_historico" class="btn btn-primary">Buscar Histórico</button>
+            {% endif %}
+        </form>
+        {% if historico %}
+            <h4>Histórico de Transações</h4>
+            <table class="table table-bordered table-striped historico-table">
+                <thead>
+                    <tr>
+                        <th>Empresa</th>
+                        <th>Quantidade</th>
+                        <th>Horário</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in historico %}
+                        <tr>
+                            <td>{{ pedido.empresa }}</td>
+                            <td>{{ pedido.quantidade_deduzida | int }}</td>
+                            <td>{{ pedido.horario.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Voltar</a>
+    </div>
+    <script>
+        function promptSenha() {
+            var senha = prompt("Digite a senha para acessar o histórico:");
+            if (senha === "03842789") {
+                document.getElementById("senha").value = senha;
+                document.getElementById("action").value = "verificar_senha";
+                document.getElementById("historico-form").submit();
+            } else {
+                alert("Senha incorreta!");
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
