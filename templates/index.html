@@ -1,113 +1,116 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Sistema de Fidelidade</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        form { margin: 10px 0; }
-        label, input, button { margin: 5px; }
-        p { margin: 10px 0; }
-    </style>
-<style>
-    body {
-        background-image: url('/static/background.png');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        color: #333;
-    }
-    .container {
-        background-color: rgba(255, 255, 255, 0.8);
-        padding: 20px;
-        border-radius: 8px;
-        max-width: 600px;
-        margin: 20px auto;
-    }
-</style>
-</head>
-<body>
-<div class="container">
-    <h1>Sistema de Fidelidade</h1>
-    <form method="POST">
-        <label>ID do Cartão:</label><br>
-        <input type="text" name="card_id" required>
-        <button type="submit" name="action" value="buscar">Buscar</button>
-    </form>
-    <p>Nome do Cliente: {% if card_id_display %}{{ card_id_display }} - {{ nome }}{% else %}{{ nome }}{% endif %}</p>
-    <p>Créditos Disponíveis: {{ creditos }}</p>
-    <p>Dias para Vencimento: {{ dias }}</p>
-    <p>Data de Expiração: {{ expiracao }}</p>
-    <p>Mensagem: {{ mensagem }}</p>
+  <html lang="pt-BR">
+  <head>
+      <meta charset="UTF-8">
+      <title>Sistema de Fidelidade</title>
+      <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+      <style>
+          body {
+              background-image: url('/static/background.png');
+              background-size: cover;
+              background-position: center;
+              background-repeat: no-repeat;
+              background-attachment: fixed;
+              color: #333;
+              font-family: Arial, sans-serif;
+          }
+          .container {
+              background-color: rgba(255, 255, 255, 0.8);
+              padding: 20px;
+              border-radius: 8px;
+              max-width: 600px;
+              margin: 20px auto;
+          }
+      </style>
+  </head>
+  <body>
+      <div class="container">
+          <h1 class="text-center mb-4">Sistema de Fidelidade</h1>
+          <form method="POST" action="{{ url_for('index') }}">
+              <div class="form-group">
+                  <label for="card_id">ID do Cartão:</label>
+                  <input type="text" class="form-control" id="card_id" name="card_id" value="{{ card_id_display }}" required>
+              </div>
+              <input type="hidden" name="action" value="buscar">
+              <button type="submit" class="btn btn-primary btn-block">Buscar Cliente</button>
+          </form>
+          {% if mensagem %}
+              <p class="text-danger mt-3">{{ mensagem }}</p>
+          {% endif %}
+          {% if nome %}
+              <div class="mt-3">
+                  <p><strong>Nome:</strong> {% if card_id_display %}{{ card_id_display }} - {{ nome }}{% else %}{{ nome }}{% endif %}</p>
+                  <p><strong>Créditos Disponíveis:</strong> {{ creditos }}</p>
+                  <p><strong>Dias para Vencimento:</strong> {{ dias }}</p>
+                  <p><strong>Data de Expiração:</strong> {{ expiracao }}</p>
+              </div>
+              <form method="POST" action="{{ url_for('index') }}" onsubmit="return confirmarAcao(this, 'recarregar');">
+                  <input type="hidden" name="card_id" value="{{ card_id_display or '' }}">
+                  <input type="hidden" name="senha" id="senha_recarregar">
+                  <input type="hidden" name="action" value="recarregar">
+                  <button type="submit" class="btn btn-success btn-block mt-3">Recarregar Créditos</button>
+              </form>
+              <form method="POST" action="{{ url_for('index') }}" onsubmit="return confirmarAdicionar(this);">
+                  <input type="hidden" name="card_id" value="{{ card_id_display or '' }}">
+                  <input type="hidden" name="senha" id="senha_adicionar">
+                  <input type="hidden" name="quantidade" id="quantidade_adicionar">
+                  <input type="hidden" name="action" value="adicionar_credito_manual">
+                  <button type="submit" class="btn btn-success btn-block mt-3">Adicionar Crédito Manual</button>
+              </form>
+              <form method="POST" action="{{ url_for('index') }}" onsubmit="return confirmarDeduzir(this);">
+                  <input type="hidden" name="card_id" value="{{ card_id_display or '' }}">
+                  <input type="hidden" name="quantidade" id="quantidade_deduzir">
+                  <input type="hidden" name="action" value="deduzir">
+                  <button type="submit" class="btn btn-danger btn-block mt-3">Deduzir Crédito</button>
+              </form>
+          {% endif %}
+          <a href="{{ url_for('cadastro') }}" class="btn btn-primary btn-block mt-3">Novo Cadastro</a>
+          <a href="{{ url_for('consulta') }}" class="btn btn-info btn-block mt-3">Consulta de Cadastros</a>
+          <a href="{{ url_for('cliente') }}" class="btn btn-info btn-block mt-3">Consulta por Celular</a>
+      </div>
+      <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+      <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+      <script>
+          function confirmarAcao(form, action) {
+              var msg = action === 'recarregar' ? 'Digite a senha para recarga:' : 'Digite a senha para adicionar crédito:';
+              var senha = prompt(msg);
+              if (senha === "03842789") {
+                  document.getElementById("senha_" + action).value = senha;
+                  return true;
+              } else {
+                  alert("Senha incorreta!");
+                  return false;
+              }
+          }
 
-    <form action="{{ url_for('cadastro') }}">
-        <button type="submit">Novo Cadastro</button>
-    </form>
+          function confirmarAdicionar(form) {
+              var senha = prompt("Digite a senha para adicionar crédito:");
+              if (senha !== "03842789") {
+                  alert("Senha incorreta!");
+                  return false;
+              }
+              var quantidade = prompt("Quantos créditos devem ser adicionados?");
+              if (quantidade && !isNaN(quantidade) && parseInt(quantidade) > 0) {
+                  document.getElementById("quantidade_adicionar").value = quantidade;
+                  document.getElementById("senha_adicionar").value = senha;
+                  return true;
+              } else {
+                  alert("Por favor, insira um número válido maior que zero!");
+                  return false;
+              }
+          }
 
-    <form method="POST" onsubmit="return confirmarAcao(this, 'recarregar');">
-        <input type="hidden" name="card_id" value="{{ request.form['card_id'] or '' }}">
-        <input type="hidden" name="senha" id="senha_recarregar">
-        <input type="hidden" name="action" value="recarregar">
-        <button type="submit">Recarregar Créditos</button>
-    </form>
-
-    <form method="POST" onsubmit="return confirmarAdicionar(this);">
-        <input type="hidden" name="card_id" value="{{ request.form['card_id'] or '' }}">
-        <input type="hidden" name="senha" id="senha_adicionar">
-        <input type="hidden" name="quantidade" id="quantidade_adicionar">
-        <input type="hidden" name="action" value="adicionar_credito_manual">
-        <button type="submit">Adicionar Crédito Manual</button>
-    </form>
-
-    <form method="POST" onsubmit="return confirmarDeduzir(this);">
-        <input type="hidden" name="card_id" value="{{ request.form['card_id'] or '' }}">
-        <input type="hidden" name="quantidade" id="quantidade_deduzir">
-        <input type="hidden" name="action" value="deduzir">
-        <button type="submit">Deduzir Crédito</button>
-    </form>
-
-    <script>
-        function confirmarAcao(form, action) {
-            var msg = action === 'recarregar' ? 'Digite a senha para recarga:' : 'Digite a senha para adicionar crédito:';
-            var senha = prompt(msg);
-            if (senha === "03842789") {
-                document.getElementById("senha_" + action).value = senha;
-                return true;
-            } else {
-                alert("Senha incorreta!");
-                return false;
-            }
-        }
-
-        function confirmarAdicionar(form) {
-            var senha = prompt("Digite a senha para adicionar crédito:");
-            if (senha !== "03842789") {
-                alert("Senha incorreta!");
-                return false;
-            }
-            var quantidade = prompt("Quantos créditos devem ser adicionados?");
-            if (quantidade && !isNaN(quantidade) && parseInt(quantidade) > 0) {
-                document.getElementById("quantidade_adicionar").value = quantidade;
-                document.getElementById("senha_adicionar").value = senha;
-                return true;
-            } else {
-                alert("Por favor, insira um número válido maior que zero!");
-                return false;
-            }
-        }
-
-        function confirmarDeduzir(form) {
-            var quantidade = prompt("Quantos produtos de comida foram consumidos?");
-            if (quantidade && !isNaN(quantidade) && parseInt(quantidade) > 0) {
-                document.getElementById("quantidade_deduzir").value = quantidade;
-                return true;
-            } else {
-                alert("Por favor, insira um número válido maior que zero!");
-                return false;
-            }
-        }
-    </script>
-</div>
-</body>
-</html>
+          function confirmarDeduzir(form) {
+              var quantidade = prompt("Quantos produtos de comida foram consumidos?");
+              if (quantidade && !isNaN(quantidade) && parseInt(quantidade) > 0) {
+                  document.getElementById("quantidade_deduzir").value = quantidade;
+                  return true;
+              } else {
+                  alert("Por favor, insira um número válido maior que zero!");
+                  return false;
+              }
+          }
+      </script>
+  </body>
+  </html>
