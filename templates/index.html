@@ -70,6 +70,14 @@
                          <button type="submit" name="action" value="deduzir" class="btn btn-primary">Confirmar Dedução</button>
                      </div>
                  {% endif %}
+                 {% if mostrar_adicionar_credito %}
+                     <div class="mb-3 mt-3">
+                         <label for="quantidade" class="form-label">Quantos créditos deseja adicionar?</label>
+                         <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>
+                         <input type="hidden" name="senha" value="03842789">
+                         <button type="submit" name="action" value="confirmar_adicao" class="btn btn-success">Confirmar Adição</button>
+                     </div>
+                 {% endif %}
                  <input type="hidden" name="senha" id="senha">
                  <input type="hidden" name="action" id="action">
              </form>

@@ -235,6 +235,7 @@ def index():
     mostrar_empresas = False
     mostrar_quantidade = False
     empresa_selecionada = ""
+    mostrar_adicionar_credito = False
     if request.method == 'POST':
         action = request.form.get('action')
         card_id = request.form.get('card_id')
@@ -256,20 +257,19 @@ def index():
         elif action == 'adicionar_credito_manual':
             senha = request.form.get('senha')
             if senha == "03842789":
-                mensagem = "Por favor, insira a quantidade de créditos a adicionar."
                 nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
-                card_id_display = card_id
+                card_id_display = card_id if nome != "Cliente não encontrado" else ""
+                if creditos is not None:
+                    mostrar_adicionar_credito = True
+                else:
+                    mensagem = "Cliente não encontrado"
             else:
                 mensagem = "Senha incorreta!"
         elif action == 'confirmar_adicao':
-            senha = request.form.get('senha')
             quantidade = request.form.get('quantidade')
-            if senha == "03842789":
-                mensagem = adicionar_credito_manual(card_id, quantidade)
-                nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
-                card_id_display = card_id
-            else:
-                mensagem = "Senha incorreta!"
+            mensagem = adicionar_credito_manual(card_id, quantidade)
+            nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
+            card_id_display = card_id
         elif action == 'mostrar_empresas':
             nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
             card_id_display = card_id if nome != "Cliente não encontrado" else ""
@@ -288,7 +288,7 @@ def index():
             mensagem = deduzir_credito(card_id, quantidade, empresa)
             nome, creditos, dias, expiracao, historico = buscar_info_cliente(card_id)
             card_id_display = card_id
-    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, historico=historico, mostrar_empresas=mostrar_empresas, mostrar_quantidade=mostrar_quantidade, empresa_selecionada=empresa_selecionada)
+    return render_template('index.html', mensagem=mensagem, card_id_display=card_id_display, nome=nome, creditos=creditos, dias=dias, expiracao=expiracao, historico=historico, mostrar_empresas=mostrar_empresas, mostrar_quantidade=mostrar_quantidade, empresa_selecionada=empresa_selecionada, mostrar_adicionar_credito=mostrar_adicionar_credito)
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
