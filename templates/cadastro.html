@@ -1,128 +1,137 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Cadastro - Sistema de Fidelidade</title>
-    <style>
-        body {
-            background-image: url('/static/background.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            color: #333;
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 8px;
-            max-width: 600px;
-            margin: 20px auto;
-        }
-        input, button, select {
-            padding: 10px;
-            margin: 5px;
-            width: 200px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Cadastro de Cliente</h1>
-        <form method="POST" action="{{ url_for('cadastro') }}">
-            <label for="card_id">ID do Cartão:</label>
-            <input type="text" id="card_id" name="card_id" value="{{ card_id }}" required><br><br>
-            <label for="nome">Nome:</label>
-            <input type="text" id="nome" name="nome" required><br><br>
-            <label for="celular">Celular:</label>
-            <input type="text" id="celular" name="celular" required placeholder="Ex.: (11) 99999-9999"><br><br>
-            <button type="submit">Cadastrar</button>
-        </form>
-        {% if mensagem %}
-            <p>{{ mensagem }}</p>
-        {% endif %}
+  <html lang="pt-BR">
+  <head>
+      <meta charset="UTF-8">
+      <title>Cadastro - Sistema de Fidelidade</title>
+      <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+      <style>
+          body {
+              background-image: url('/static/background.png');
+              background-size: cover;
+              background-position: center;
+              background-repeat: no-repeat;
+              background-attachment: fixed;
+              color: #333;
+              font-family: Arial, sans-serif;
+          }
+          .container {
+              background-color: rgba(255, 255, 255, 0.8);
+              padding: 20px;
+              border-radius: 8px;
+              max-width: 600px;
+              margin: 20px auto;
+          }
+      </style>
+  </head>
+  <body>
+      <div class="container">
+          <h1 class="text-center mb-4">Cadastro de Cliente</h1>
+          <form method="POST" action="{{ url_for('cadastro') }}">
+              <div class="form-group">
+                  <label for="card_id">ID do Cartão:</label>
+                  <input type="text" class="form-control" id="card_id" name="card_id" value="{{ card_id }}" required>
+              </div>
+              <div class="form-group">
+                  <label for="nome">Nome:</label>
+                  <input type="text" class="form-control" id="nome" name="nome" required>
+              </div>
+              <div class="form-group">
+                  <label for="celular">Celular:</label>
+                  <input type="text" class="form-control" id="celular" name="celular" required placeholder="Ex.: (11) 99999-9999">
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">Cadastrar</button>
+          </form>
+          {% if mensagem %}
+              <p class="text-danger mt-3">{{ mensagem }}</p>
+          {% endif %}
 
-        <h2>Editar Cliente</h2>
-        <form method="POST" action="{{ url_for('cadastro') }}">
-            <input type="hidden" name="action" value="mostrar_edicao">
-            <label for="senha">Senha:</label>
-            <input type="password" id="senha" name="senha" required><br><br>
-            <button type="submit">Acessar Edição</button>
-        </form>
-        {% if mostrar_formulario_edicao %}
-            <h3>Selecionar Cliente para Editar</h3>
-            <form method="POST" action="{{ url_for('cadastro') }}">
-                <input type="hidden" name="action" value="buscar_cliente">
-                <label for="card_id_editar">ID do Cartão:</label>
-                <input type="text" id="card_id_editar" name="card_id_editar" required><br><br>
-                <button type="submit">Buscar</button>
-            </form>
-            {% if nome_atual %}
-                <h3>Editar Dados</h3>
-                <form method="POST" action="{{ url_for('cadastro') }}">
-                    <input type="hidden" name="action" value="editar">
-                    <input type="hidden" name="card_id" value="{{ card_id_editar }}">
-                    <label for="novo_nome">Novo Nome:</label>
-                    <input type="text" id="novo_nome" name="novo_nome" value="{{ nome_atual }}" required><br><br>
-                    <label for="novo_celular">Novo Celular:</label>
-                    <input type="text" id="novo_celular" name="novo_celular" value="{{ celular_atual }}" required placeholder="Ex.: (11) 99999-9999"><br><br>
-                    <button type="submit">Confirmar Alteração</button>
-                </form>
-            {% endif %}
-        {% endif %}
-        {% if confirmar_edicao %}
-            <h3>Confirmar Alteração</h3>
-            <p>Tem certeza de que deseja alterar o cadastro?</p>
-            <form method="POST" action="{{ url_for('cadastro') }}">
-                <input type="hidden" name="action" value="confirmar_edicao">
-                <input type="hidden" name="card_id" value="{{ card_id_editar }}">
-                <input type="hidden" name="novo_nome" value="{{ request.form.get('novo_nome') }}">
-                <input type="hidden" name="novo_celular" value="{{ request.form.get('novo_celular') }}">
-                <button type="submit">Sim</button>
-                <button type="button" onclick="window.location.href='{{ url_for('cadastro') }}'">Cancelar</button>
-            </form>
-        {% endif %}
+          <h2 class="text-center mt-4">Editar Cliente</h2>
+          <form method="POST" action="{{ url_for('cadastro') }}">
+              <input type="hidden" name="action" value="mostrar_edicao">
+              <div class="form-group">
+                  <label for="senha">Senha:</label>
+                  <input type="password" class="form-control" id="senha" name="senha" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">Acessar Edição</button>
+          </form>
+          {% if mostrar_formulario_edicao %}
+              <h3 class="mt-3">Selecionar Cliente para Editar</h3>
+              <form method="POST" action="{{ url_for('cadastro') }}">
+                  <input type="hidden" name="action" value="buscar_cliente">
+                  <div class="form-group">
+                      <label for="card_id_editar">ID do Cartão:</label>
+                      <input type="text" class="form-control" id="card_id_editar" name="card_id_editar" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">Buscar</button>
+              </form>
+              {% if nome_atual %}
+                  <h3 class="mt-3">Editar Dados</h3>
+                  <form method="POST" action="{{ url_for('cadastro') }}">
+                      <input type="hidden" name="action" value="editar">
+                      <input type="hidden" name="card_id" value="{{ card_id_editar }}">
+                      <div class="form-group">
+                          <label for="novo_nome">Novo Nome:</label>
+                          <input type="text" class="form-control" id="novo_nome" name="novo_nome" value="{{ nome_atual }}" required>
+                      </div>
+                      <div class="form-group">
+                          <label for="novo_celular">Novo Celular:</label>
+                          <input type="text" class="form-control" id="novo_celular" name="novo_celular" value="{{ celular_atual }}" required placeholder="Ex.: (11) 99999-9999">
+                      </div>
+                      <button type="submit" class="btn btn-success btn-block">Confirmar Alteração</button>
+                  </form>
+              {% endif %}
+          {% endif %}
+          {% if confirmar_edicao %}
+              <h3 class="mt-3">Confirmar Alteração</h3>
+              <p>Tem certeza de que deseja alterar o cadastro?</p>
+              <form method="POST" action="{{ url_for('cadastro') }}">
+                  <input type="hidden" name="action" value="confirmar_edicao">
+                  <input type="hidden" name="card_id" value="{{ card_id_editar }}">
+                  <input type="hidden" name="novo_nome" value="{{ request.form.get('novo_nome') }}">
+                  <input type="hidden" name="novo_celular" value="{{ request.form.get('novo_celular') }}">
+                  <button type="submit" class="btn btn-success btn-block">Sim</button>
+                  <a href="{{ url_for('cadastro') }}" class="btn btn-secondary btn-block mt-2">Cancelar</a>
+              </form>
+          {% endif %}
 
-        <h2>Excluir Cliente</h2>
-        <form method="POST" action="{{ url_for('cadastro') }}">
-            <input type="hidden" name="action" value="mostrar_exclusao">
-            <label for="senha">Senha:</label>
-            <input type="password" id="senha" name="senha" required><br><br>
-            <button type="submit">Acessar Exclusão</button>
-        </form>
-        {% if mostrar_formulario_exclusao %}
-            <h3>Selecionar Cliente para Excluir</h3>
-            <form method="POST" action="{{ url_for('cadastro') }}">
-                <input type="hidden" name="action" value="selecionar_exclusao">
-                <label for="card_id_excluir">Selecione o Cliente:</label>
-                <select id="card_id_excluir" name="card_id_excluir" required>
-                    {% for card_id, nome in clientes %}
-                        <option value="{{ card_id }}">{{ card_id }} - {{ nome }}</option>
-                    {% endfor %}
-                </select><br><br>
-                <button type="submit">Selecionar</button>
-            </form>
-        {% endif %}
-        {% if confirmar_exclusao %}
-            <h3>Confirmar Exclusão</h3>
-            <p>Tem certeza de que deseja excluir o cliente {{ card_id_excluir }}?</p>
-            <form method="POST" action="{{ url_for('cadastro') }}">
-                <input type="hidden" name="action" value="confirmar_exclusao">
-                <input type="hidden" name="card_id" value="{{ card_id_excluir }}">
-                <button type="submit">Sim</button>
-                <button type="button" onclick="window.location.href='{{ url_for('cadastro') }}'">Cancelar</button>
-            </form>
-        {% endif %}
-    </div>
-</body>
-</html>
+          <h2 class="text-center mt-4">Excluir Cliente</h2>
+          <form method="POST" action="{{ url_for('cadastro') }}">
+              <input type="hidden" name="action" value="mostrar_exclusao">
+              <div class="form-group">
+                  <label for="senha">Senha:</label>
+                  <input type="password" class="form-control" id="senha" name="senha" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">Acessar Exclusão</button>
+          </form>
+          {% if mostrar_formulario_exclusao %}
+              <h3 class="mt-3">Selecionar Cliente para Excluir</h3>
+              <form method="POST" action="{{ url_for('cadastro') }}">
+                  <input type="hidden" name="action" value="selecionar_exclusao">
+                  <div class="form-group">
+                      <label for="card_id_excluir">Selecione o Cliente:</label>
+                      <select class="form-control" id="card_id_excluir" name="card_id_excluir" required>
+                          {% for card_id, nome in clientes %}
+                              <option value="{{ card_id }}">{{ card_id }} - {{ nome }}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">Selecionar</button>
+              </form>
+          {% endif %}
+          {% if confirmar_exclusao %}
+              <h3 class="mt-3">Confirmar Exclusão</h3>
+              <p>Tem certeza de que deseja excluir o cliente {{ card_id_excluir }}?</p>
+              <form method="POST" action="{{ url_for('cadastro') }}">
+                  <input type="hidden" name="action" value="confirmar_exclusao">
+                  <input type="hidden" name="card_id" value="{{ card_id_excluir }}">
+                  <button type="submit" class="btn btn-danger btn-block">Sim</button>
+                  <a href="{{ url_for('cadastro') }}" class="btn btn-secondary btn-block mt-2">Cancelar</a>
+              </form>
+          {% endif %}
+          <a href="{{ url_for('index') }}" class="btn btn-secondary btn-block mt-3">Voltar</a>
+      </div>
+      <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+      <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+  </body>
+  </html>

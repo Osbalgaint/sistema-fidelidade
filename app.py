@@ -1,21 +1,23 @@
 import os
-import sqlite3
+import psycopg2
+from psycopg2.extras import DictCursor
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 
 app = Flask(__name__)
 
 # Conexão com banco de dados
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
 def get_db_connection():
-    conn = sqlite3.connect('fidelidade.db')
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
     return conn
 
 # Cria tabela de clientes
 conn = get_db_connection()
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS clientes (
-    id INTEGER PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     nome TEXT NOT NULL,
     card_id TEXT UNIQUE NOT NULL,
     ultimo_pagamento DATE,
@@ -24,9 +26,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS clientes (
     celular TEXT NOT NULL
 )''')
 conn.commit()
-conn.close()
-
-def validar_id(card_id):
+conn.close()def validar_id(card_id):
     if not card_id.startswith('CARD'):
         return False, "Erro: O ID do cartão deve começar com 'CARD'."
     conn = get_db_connection()
@@ -82,7 +82,7 @@ def cadastrar_cliente(nome, card_id, celular):
         conn.commit()
         conn.close()
         return "Cliente cadastrado com sucesso! Créditos iniciais: 10"
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         conn.close()
         return "Erro: ID do cartão já existe."
 
@@ -290,6 +290,15 @@ def cadastro():
                     if "sucesso" in mensagem.lower():
                         return redirect(url_for('index'))
     return render_template('cadastro.html', mensagem=mensagem, card_id=card_id, nome_atual=nome_atual, celular_atual=celular_atual, mostrar_formulario_edicao=mostrar_formulario_edicao, mostrar_formulario_exclusao=mostrar_formulario_exclusao, confirmar_exclusao=confirmar_exclusao, confirmar_edicao=confirmar_edicao, clientes=clientes, card_id_excluir=card_id_excluir, card_id_editar=card_id_editar)
+
+@app.route('/consulta')
+def consulta():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT card_id, nome, creditos, data_expiracao FROM clientes ORDER BY id ASC")
+    clientes = c.fetchall()
+    conn.close()
+    return render_template('consulta.html', clientes=clientes)
 
 @app.route('/cliente', methods=['GET', 'POST'])
 def cliente():
