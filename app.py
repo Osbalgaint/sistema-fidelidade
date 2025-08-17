@@ -347,6 +347,38 @@ def cadastro():
                     return redirect(url_for('index'))
     return render_template('cadastro.html', mensagem=mensagem, card_id=card_id)
 
+@app.route('/editar', methods=['GET', 'POST'])
+def editar():
+    mensagem = ""
+    card_id = ""
+    nome_atual = ""
+    celular_atual = ""
+    mostrar_formulario = False
+    if request.method == 'POST':
+        action = request.form.get('action')
+        card_id = request.form.get('card_id')
+        if action == 'buscar':
+            if not card_id:
+                mensagem = "Erro: ID do cartão é obrigatório!"
+            else:
+                valido, nome_atual, celular_atual = buscar_nome_cliente(card_id)
+                if valido:
+                    mostrar_formulario = True
+                else:
+                    mensagem = nome_atual
+        elif action == 'editar':
+            novo_nome = request.form.get('novo_nome')
+            novo_celular = request.form.get('novo_celular')
+            if not novo_nome or not novo_celular:
+                mensagem = "Erro: Preencha nome e celular!"
+            else:
+                mensagem = atualizar_nome_cliente(card_id, novo_nome, novo_celular)
+                if "sucesso" in mensagem.lower():
+                    return redirect(url_for('index'))
+                valido, nome_atual, celular_atual = buscar_nome_cliente(card_id)
+                mostrar_formulario = True
+    return render_template('editar.html', mensagem=mensagem, card_id=card_id, nome_atual=nome_atual, celular_atual=celular_atual, mostrar_formulario=mostrar_formulario)
+
 @app.route('/cliente', methods=['GET', 'POST'])
 def cliente():
     mensagem = None
